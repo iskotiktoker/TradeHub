@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>TradeHub Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-logo">🏪 TradeHub Pro</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<div id="toastRoot"></div>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">🏪 TradeHub Pro</div>
+    <div class="auth-sub">Платформа для профессиональных перекупщиков</div>
+    <div class="auth-tabs" id="authTabs">
+      <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Войти</div>
+      <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Регистрация</div>
+    </div>
+    <div class="auth-error" id="authError"></div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="trader@example.com" autocomplete="email"></div>
+      <div class="form-group"><label>Пароль</label><div class="pw-wrap"><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"><span class="pw-toggle" onclick="togglePw('loginPass',this)">👁</span></div></div>
+      <button class="btn-primary" onclick="doLogin()">Войти →</button>
+      <div class="auth-notice">Демо: admin@trade.com / admin123</div>
+    </div>
+
+    <!-- 2FA -->
+    <div class="two-fa-panel" id="twoFaPanel">
+      <p style="text-align:center;color:var(--text2);font-size:.85rem;margin-bottom:.3rem;">Введите 6-значный код из приложения</p>
+      <div class="otp-wrap" id="otpWrap">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1">
+      </div>
+      <button class="btn-primary" onclick="verify2FA()">Подтвердить</button>
+      <div class="auth-notice" style="margin-top:.7rem;cursor:pointer;color:var(--text2);" onclick="backToLogin()">← Назад</div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none;">
+      <div class="form-group"><label>Имя</label><input type="text" id="regName" placeholder="Ваше имя" autocomplete="name"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="trader@example.com" autocomplete="email"></div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <div class="pw-wrap"><input type="password" id="regPass" placeholder="Минимум 6 символов" oninput="checkStrength(this.value)" autocomplete="new-password"><span class="pw-toggle" onclick="togglePw('regPass',this)">👁</span></div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="strength-label" id="strengthLabel"></div>
+      </div>
+      <button class="btn-primary" onclick="doRegister()">Создать аккаунт →</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="sidebarBackdrop" onclick="closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">TradeHub</div>
+    <div class="sidebar-tagline">Профессиональная платформа</div>
+    <div class="nav-section">Главное</div>
+    <div class="nav-item active" data-page="dashboard" onclick="navTo('dashboard',this)"><span class="nav-icon">📊</span><span class="nav-label">Дашборд</span></div>
+    <div class="nav-item" data-page="products" onclick="navTo('products',this)"><span class="nav-icon">📦</span><span class="nav-label">Товары</span><span class="nav-badge" id="navLowBadge" style="display:none;">0</span></div>
+    <div class="nav-item" data-page="analytics" onclick="navTo('analytics',this)"><span class="nav-icon">📈</span><span class="nav-label">Аналитика</span></div>
+    <div class="nav-item" data-page="vegetables" onclick="navTo('vegetables',this)"><span class="nav-icon">🥦</span><span class="nav-label">Овощи / Фрукты</span></div>
+    <div class="nav-section">Инструменты</div>
+    <div class="nav-item" data-page="calculator" onclick="navTo('calculator',this)"><span class="nav-icon">🧮</span><span class="nav-label">Калькулятор</span></div>
+    <div class="nav-item" data-page="alerts" onclick="navTo('alerts',this)"><span class="nav-icon">🔔</span><span class="nav-label">Уведомления</span><span class="nav-badge" id="navAlertBadge" style="display:none;">0</span></div>
+    <div class="nav-section">Система</div>
+    <div class="nav-item" data-page="settings" onclick="navTo('settings',this)"><span class="nav-icon">⚙️</span><span class="nav-label">Настройки</span></div>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="avatar" id="sideAvatar">АД</div>
+        <div><div class="user-name" id="sideUserName">Admin</div><div class="user-role">Перекупщик</div></div>
+        <span class="logout-btn" onclick="doLogout()" title="Выйти">🚪</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Меню">☰</button>
+      <div class="topbar-title" id="topbarTitle">Дашборд</div>
+      <div class="topbar-right">
+        <select class="ctrl-select" id="langSelect" onchange="changeLang(this.value)">
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="ky">🇰🇬 Кыргызча</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+        <select class="ctrl-select" id="currSelect" onchange="changeCurrency(this.value)">
+          <option value="KGS">🇰🇬 СОМ</option>
+          <option value="RUB">🇷🇺 ₽</option>
+          <option value="USD">🇺🇸 $</option>
+        </select>
+        <div class="notif-btn" onclick="navTo('alerts')" title="Уведомления">🔔<span class="notif-dot" id="notifDot" style="display:none;"></span></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header"><div class="page-title">Сводка</div><div class="page-sub" id="dashDate"></div></div>
+        <div class="stats-grid" id="dashStats"></div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Продажи по дням</div>
+            <div class="chart-subtitle">Последние 7 дней</div>
+            <div class="bars-wrap" id="salesBars"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">По категориям</div>
+            <div class="donut-wrap" id="categoryDonut"></div>
+          </div>
+        </div>
+        <div class="alerts-section" id="dashAlerts">
+          <div class="section-header"><div class="section-label">⚠️ Требует внимания</div></div>
+          <div class="alerts-list" id="dashAlertsList"></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="page" id="page-products">
+        <div class="page-header"><div class="page-title">Товары</div><div class="page-sub">Каталог и управление складом</div></div>
+        <div class="products-header">
+          <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Поиск по названию или SKU..."></div>
+          <button class="btn-add" onclick="openProductModal()">+ Добавить товар</button>
+        </div>
+        <div class="filter-row" id="productFilterRow">
+          <button class="filter-btn active" data-f="all" onclick="setFilter('all',this)">Все</button>
+          <button class="filter-btn" data-f="low" onclick="setFilter('low',this)">⚠️ Мало</button>
+          <button class="filter-btn" data-f="out" onclick="setFilter('out',this)">❌ Нет</button>
+          <button class="filter-btn" data-f="good" onclick="setFilter('good',this)">✅ В наличии</button>
+        </div>
+        <div class="table-wrap">
+          <table id="productsTable">
+            <thead>
+              <tr>
+                <th data-sort="name">Название</th>
+                <th data-sort="buy">Закупка</th>
+                <th data-sort="sell">Продажа</th>
+                <th data-sort="margin">Маржа</th>
+                <th data-sort="sold">Продано</th>
+                <th data-sort="stock">Остаток</th>
+                <th data-sort="status">Статус</th>
+                <th style="width:90px;"></th>
+              </tr>
+            </thead>
+            <tbody id="productsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="page" id="page-analytics">
+        <div class="page-header"><div class="page-title">Аналитика</div><div class="page-sub">Показатели эффективности</div></div>
+        <div class="analytics-grid" id="analyticsCards"></div>
+        <div class="top-grid">
+          <div class="top-list-card">
+            <div class="chart-title">🏆 Топ товаров по прибыли</div>
+            <div id="topProfitList"></div>
+          </div>
+          <div class="top-list-card">
+            <div class="chart-title">📋 Последние действия</div>
+            <div id="activityFeed"></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">📉 Анализ рисков</div>
+          <div id="riskGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- CALCULATOR -->
+      <div class="page" id="page-calculator">
+        <div class="page-header"><div class="page-title">Калькулятор прибыли</div><div class="page-sub">Быстрый расчёт маржи и ROI</div></div>
+        <div class="calc-page">
+          <div class="chart-card">
+            <div class="calc-inputs">
+              <div class="form-group"><label>Закупочная цена</label><input type="number" id="calcBuy" placeholder="0" oninput="recalc()" min="0"></div>
+              <div class="form-group"><label>Цена продажи</label><input type="number" id="calcSell" placeholder="0" oninput="recalc()" min="0"></div>
+              <div class="form-group"><label>Доп. расходы (доставка и т.д.)</label><input type="number" id="calcExtra" placeholder="0" oninput="recalc()" min="0"></div>
+              <div class="form-group"><label>Количество штук</label><input type="number" id="calcQty" placeholder="1" value="1" oninput="recalc()" min="1"></div>
+            </div>
+            <div class="calc-result" id="calcResult" style="display:none;">
+              <div class="calc-row"><span>Выручка</span><span id="cRevenue"></span></div>
+              <div class="calc-row"><span>Себестоимость</span><span id="cCost"></span></div>
+              <div class="calc-row"><span>Доп. расходы</span><span id="cExtra"></span></div>
+              <div class="calc-row calc-total"><span>Прибыль</span><span id="cProfit"></span></div>
+              <div class="calc-row"><span>Маржа</span><span id="cMargin"></span></div>
+              <div class="calc-row"><span>ROI</span><span id="cROI"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTS -->
+      <div class="page" id="page-alerts">
+        <div class="page-header"><div class="page-title">Уведомления</div><div class="page-sub">Все предупреждения и оповещения</div></div>
+        <div class="alerts-list" id="allAlertsList"></div>
+      </div>
+
+      <!-- VEGETABLES -->
+      <div class="page" id="page-vegetables">
+        <div class="page-header"><div class="page-title">🥦 Овощи / Фрукты</div><div class="page-sub">Управление скоропортящимися товарами</div></div>
+        <div class="veg-stats" id="vegStats"></div>
+        <div class="products-header">
+          <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="vegSearch" placeholder="Поиск..." oninput="debouncedRenderVeg()"></div>
+          <button class="btn-add" onclick="openVegModal()">+ Добавить</button>
+        </div>
+        <div class="table-wrap">
+          <table id="vegTable">
+            <thead>
+              <tr>
+                <th>Товар</th><th>Категория</th><th>Ед.</th>
+                <th>Общий вес, кг</th><th>Общий вес, кг</th><th>Общий вес, кг</th>
+                <th>Закупка/кг</th><th>Продажа/кг</th><th>Маржа</th>
+                <th>Дата</th><th>Срок</th><th>Статус</th><th style="width:80px;"></th>
+              </tr>
+            </thead>
+            <tbody id="vegBody"></tbody>
+          </table>
+        </div>
+        <div class="veg-bottom">
+          <div class="chart-card">
+            <div class="chart-title">🧮 Оптовый калькулятор</div>
+            <div class="form-group" style="margin-top:.5rem;"><label>Товар</label><select id="vegCalcSelect" onchange="calcVeg()"></select></div>
+            <div class="form-row">
+              <div class="form-group"><label>Ящиков / мешков</label><input type="number" id="vegCalcBoxes" value="1" min="0" oninput="calcVeg()"></div>
+              <div class="form-group"><label>Доп. кг</label><input type="number" id="vegCalcKg" value="0" min="0" oninput="calcVeg()"></div>
+            </div>
+            <div class="calc-result" id="vegCalcResult" style="margin-top:.5rem;">
+              <div class="calc-row"><span>Итого</span><span id="vcKg">—</span></div>
+              <div class="calc-row"><span>Себестоимость</span><span id="vcCost">—</span></div>
+              <div class="calc-row"><span>Выручка</span><span id="vcRev">—</span></div>
+              <div class="calc-row calc-total"><span>Прибыль</span><span id="vcProfit">—</span></div>
+              <div class="calc-row"><span>Маржа</span><span id="vcMargin">—</span></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">⏰ Контроль сроков</div>
+            <div id="vegExpiryList" style="margin-top:.5rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="page-header"><div class="page-title">Настройки</div><div class="page-sub">Управление аккаунтом и предпочтениями</div></div>
+        <div class="settings-layout">
+          <div class="settings-nav">
+            <div class="settings-nav-item active" onclick="switchSettings('profile',this)">👤 Профиль</div>
+            <div class="settings-nav-item" onclick="switchSettings('security',this)">🔒 Безопасность</div>
+            <div class="settings-nav-item" onclick="switchSettings('preferences',this)">🎨 Интерфейс</div>
+            <div class="settings-nav-item" onclick="switchSettings('data',this)">💾 Данные</div>
+          </div>
+          <div class="settings-panel">
+            <div id="settings-profile">
+              <div class="settings-section">
+                <div class="settings-section-title">Профиль пользователя</div>
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;">
+                  <div class="avatar-big" id="bigAvatar">АД</div>
+                  <div><div id="profileName" style="font-weight:600;">Admin</div><div id="profileEmail" style="font-size:.8rem;color:var(--text2);">admin@trade.com</div></div>
+                </div>
+                <div class="form-group"><label>Имя</label><input type="text" id="profileNameInput"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="profileEmailInput"></div>
+                <button class="btn-primary" style="max-width:180px;margin-top:.5rem;" onclick="saveProfile()">Сохранить</button>
+              </div>
+            </div>
+            <div id="settings-security" style="display:none;">
+              <div class="settings-section">
+                <div class="settings-section-title">Безопасность</div>
+                <div class="setting-item"><div><div class="setting-label">Двухфакторная аутентификация</div><div class="setting-sub">Подтверждение входа кодом</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+                <div class="setting-item"><div><div class="setting-label">Уведомления о входе</div><div class="setting-sub">Email при новом входе</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+              </div>
+            </div>
+            <div id="settings-preferences" style="display:none;">
+              <div class="settings-section">
+                <div class="settings-section-title">Интерфейс</div>
+                <div class="setting-item"><div class="setting-label">Валюта</div><select class="ctrl-select" onchange="changeCurrency(this.value)" id="settCurr"><option value="KGS">Сом (с)</option><option value="RUB">Рубль (₽)</option><option value="USD">Доллар ($)</option></select></div>
+                <div class="setting-item"><div class="setting-label">Язык</div><select class="ctrl-select" onchange="changeLang(this.value)" id="settLang"><option value="ru">Русский</option><option value="ky">Кыргызча</option><option value="en">English</option></select></div>
+                <div class="setting-item"><div><div class="setting-label">Звуковые уведомления</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+              </div>
+            </div>
+            <div id="settings-data" style="display:none;">
+              <div class="settings-section">
+                <div class="settings-section-title">Управление данными</div>
+                <div class="setting-item"><div><div class="setting-label">Экспорт данных</div><div class="setting-sub">Скачать все данные в JSON</div></div><button class="btn-add" style="min-height:36px;" onclick="exportData()">Экспорт</button></div>
+                <div class="setting-item"><div><div class="setting-label">Сбросить данные</div><div class="setting-sub">Удалить все товары и сбросить</div></div><button class="action-btn del" onclick="resetData()">Сбросить</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="productModalTitle">Добавить товар</div>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+    <div class="form-group"><label>Название</label><input type="text" id="mName" placeholder="Название товара"></div>
+    <div class="form-group"><label>SKU / Артикул</label><input type="text" id="mSku" placeholder="Авто-генерация если пусто"></div>
+    <div class="form-group"><label>Категория</label><select id="mCat"><option>Электроника</option><option>Одежда</option><option>Обувь</option><option>Авто</option><option>Другое</option></select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Закупочная цена</label><input type="number" id="mBuy" placeholder="0" min="0" oninput="calcProductModal()"></div>
+      <div class="form-group"><label>Цена продажи</label><input type="number" id="mSell" placeholder="0" min="0" oninput="calcProductModal()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Остаток (шт)</label><input type="number" id="mStock" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Мин. остаток</label><input type="number" id="mMin" placeholder="5" min="0"></div>
+    </div>
+    <div class="calc-result" id="productModalCalc" style="display:none;">
+      <div class="calc-row"><span>Маржа</span><span id="pmMargin">—</span></div>
+      <div class="calc-row"><span>Прибыль / шт</span><span id="pmProfit">—</span></div>
+    </div>
+    <button class="btn-primary" style="margin-top:1rem;" onclick="saveProduct()">Сохранить</button>
+  </div>
+</div>
+
+<!-- VEGETABLE MODAL -->
+<div class="modal-overlay" id="vegModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="vegModalTitle">🥦 Добавить товар</div>
+      <button class="modal-close" onclick="closeVegModal()">✕</button>
+    </div>
+    <div class="form-group"><label>Название</label><input type="text" id="vmName" placeholder="Помидор, Яблоко..."></div>
+    <div class="form-row">
+      <div class="form-group"><label>Категория</label><select id="vmCat"><option>🥔 Овощи</option><option>🍎 Фрукты</option><option>🍓 Ягоды</option><option>🌿 Зелень</option><option>🧅 Лук/Чеснок</option><option>🌽 Бахчевые</option></select></div>
+      <div class="form-group"><label>Ед. измерения</label><select id="vmUnit"><option value="ящик">Ящик</option><option value="мешок">Мешок</option><option value="коробка">Коробка</option><option value="ведро">Ведро</option><option value="кг">кг (поштучно)</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Тип ящика</label><select id="vmBoxType" onchange="applyBoxType()"><option value="">Свой вес</option><option value="5">Маленький (5 кг)</option><option value="10">Средний (10 кг)</option><option value="20">Большой (20 кг)</option><option value="50">Мешок (50 кг)</option><option value="12">Ведро (12 кг)</option></select></div>
+      <div class="form-group"><label>Общий вес, кг</label><input type="number" id="vmKgBox" placeholder="20" min="0.1" step="0.1" oninput="calcVegModal()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Количество ящиков</label><input type="number" id="vmBoxes" placeholder="0" min="0" oninput="calcVegModal()"></div>
+      <div class="form-group"><label>Поставщик</label><input type="text" id="vmSupplier" placeholder="Имя поставщика"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Закупка / кг (с)</label><input type="number" id="vmBuy" placeholder="0" min="0" step="0.1" oninput="calcVegModal()"></div>
+      <div class="form-group"><label>Продажа / кг (с)</label><input type="number" id="vmSell" placeholder="0" min="0" step="0.1" oninput="calcVegModal()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Дата поступления</label><input type="date" id="vmArrival"></div>
+      <div class="form-group"><label>Срок годности (дней)</label><input type="number" id="vmShelf" placeholder="7" min="1"></div>
+    </div>
+    <div class="calc-result" id="vmCalcResult" style="display:none;margin-bottom:.9rem;">
+      <div class="calc-row"><span>Итого кг</span><span id="vmTotalKg">—</span></div>
+      <div class="calc-row"><span>Закупочная сумма</span><span id="vmTotalCost">—</span></div>
+      <div class="calc-row calc-total"><span>Маржа</span><span id="vmMarginVal">—</span></div>
+    </div>
+    <button class="btn-primary" onclick="saveVegetable()">Сохранить</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
