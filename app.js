@@ -529,7 +529,6 @@ function renderVegetables(){
   const today=new Date();
   let totalKg=0,totalBoxes=0,totalSoldKg=0;
   S.vegetables.forEach(v=>{
-    // только ящики и кг/ящик — без умножения друг на друга в итоговом весе
     totalKg+=v.kgPerBox+v.boxes;
     totalBoxes+=v.boxes;
     totalSoldKg+=v.soldKg||0;
@@ -547,7 +546,6 @@ function renderVegetables(){
   let expCount=0;
   body.innerHTML=vegs.map(v=>{
     const margin=v.sell?Math.round((v.sell-v.buy)/v.sell*100):0;
-    // В таблице показываем ящики и кг/ящик отдельно, без перемножения
     let daysLeft=999,expiryColor='var(--green)',expiryText='—',statusClass='badge-green',statusText='Свежий';
     if(v.shelf<999){
       const exp=new Date(v.arrival);exp.setDate(exp.getDate()+v.shelf);
@@ -644,11 +642,10 @@ function calcVegModal(){
   const buy=+document.getElementById('vmBuy').value||0;
   const sell=+document.getElementById('vmSell').value||0;
   const res=document.getElementById('vmCalcResult');
-  // Показываем данные БЕЗ умножения ящиков на кг/ящик
   if(kg||boxes){
     res.style.display='block';
-    document.getElementById('vmTotalKg').textContent=kg+' кг/ящ, '+boxes+' ящ';
-    document.getElementById('vmTotalCost').textContent=fmt(boxes*buy);
+    document.getElementById('vmTotalKg').textContent=kg+' кг';
+    document.getElementById('vmTotalCost').textContent=fmt(kg*buy);
     document.getElementById('vmMarginVal').textContent=sell?Math.round((sell-buy)/sell*100)+'%':'—';
   }else{res.style.display='none';}
 }
@@ -701,7 +698,6 @@ function calcVeg(){
   if(!v)return;
   const boxes=+document.getElementById('vegCalcBoxes')?.value||0;
   const extraKg=+document.getElementById('vegCalcKg')?.value||0;
-  // Показываем ящики и кг отдельно, без умножения
   const cost=boxes*v.buy+extraKg*v.buy;
   const rev=boxes*v.sell+extraKg*v.sell;
   const profit=rev-cost;
